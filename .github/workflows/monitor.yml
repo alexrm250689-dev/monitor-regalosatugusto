@@ -1,0 +1,25 @@
+name: Monitor regalosatugusto.es
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar web
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          URL="https://regalosatugusto.es"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "$URL" || echo "000")
+          echo "Codigo HTTP: $CODE"
+          if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 400 ]; then
+            curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
+              -d chat_id="$CHAT" \
+              -d text="⚠️ regalosatugusto.es CAIDA (HTTP $CODE) - $(TZ=Europe/Madrid date '+%d/%m %H:%M')"
+            exit 1
+          fi
