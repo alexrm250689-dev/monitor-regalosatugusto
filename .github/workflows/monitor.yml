@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
+    inputs:
+      prueba:
+        description: "Enviar mensaje de prueba a Telegram"
+        type: boolean
+        default: true
 
 jobs:
   check:
@@ -13,10 +18,14 @@ jobs:
         env:
           TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PRUEBA: ${{ inputs.prueba }}
         run: |
           URL="https://regalosatugusto.es"
           CODE=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "$URL" || echo "000")
           echo "Codigo HTTP: $CODE"
+          if [ "$PRUEBA" = "true" ]; then
+            curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" -d chat_id="$CHAT" -d text="✅ Prueba OK. regalosatugusto.es responde HTTP $CODE"
+          fi
           if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 400 ]; then
             curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
               -d chat_id="$CHAT" \
